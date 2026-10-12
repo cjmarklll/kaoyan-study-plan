@@ -206,6 +206,21 @@ function makePlan(){
   if(phase===0){pol.content='先用 20 分钟学习当天框架，再用剩余时间做选择并订正；未完成的框架进入本周补缺。';pol.quantity=index===0?'框架 15 min + 选择 5 题与订正 15 min':'框架 20 min + 选择 8—12 题与订正 25 min';}
   if(phase===1){pol.quantity='选择 15—20 题与订正 + 易混概念回忆，共 60 min';}
   if(phase===2){pol.quantity='选择与订正 45 min + 主观题列点 30 min';}
+  if(phase>0){
+   const mathTopics=['极限与连续：等价替换、泰勒展开条件','导数与中值定理：证明入口、单调性','一元积分：换元、分部与反常积分','微分方程：一阶、可降阶、二阶常系数','多元微分：复合求导、隐函数与极值','二重积分：区域、换序与极坐标','线代：秩、方程组、特征值与二次型'];
+   const csTopics=['数据结构：线性表算法、复杂度','数据结构：树图遍历、查找排序','计组：补码浮点、Cache 与访存','计组：寻址、CPU 与流水线','OS：PV、调度与死锁','OS：分页、地址转换与文件索引','计网：子网划分、路由与 TCP'];
+   const polTopics=['马原：唯物论、辩证法','马原：认识论、政经与科社','新思想：核心概念与重点专题','史纲：近代史到新民主主义革命','史纲：建设改革线索','毛概：主要理论与形成条件','思法与时政：易混概念'];
+   items.forEach(t=>{if(/整卷|模拟|整套节奏/.test(t.title))return;
+    if(t.subject==='数学二')t.title+='｜'+mathTopics[index%7];
+    if(t.subject==='408')t.title+='｜'+csTopics[index%7];
+    if(t.subject==='政治')t.title+='｜'+polTopics[index%7];
+    if(t.subject==='英语二'&&phase>=2){const topics=['阅读错题：2019 年第 1 篇','新题型：2020 年真题','小作文：2021 年真题，写作后订正','翻译：2022 年真题','图表作文：2023 年真题，列提纲并限时写','完形：2020 年真题，解释连接关系','本周错文：重做错误最多的一篇'];t.title+='｜'+topics[index%7];}
+   });
+   if(phase===1&&!buffer){const j=index-14,w=Math.floor(j/7),day=j%7;
+    if([1,3,5].includes(day)){const year=2016+w*3+(day-1)/2;if(year<=2023)items[0].title='复盘数学二 '+year+' 年卷｜'+mathTopics[index%7];}
+    if([2,4].includes(day)){const year=2016+w*3+(day-2)/2;if(year<=2023)items[1].title='复盘 408 '+year+' 年卷｜'+csTopics[index%7];}
+   }
+  }
   const total=Math.round(items.reduce((s,t)=>s+t.hours,0)*100)/100;
   hint=(index===0?'今天用 6 小时恢复节奏。':isBuffer?'补缺日：先完成基本任务，余下时间最多补 3 个重点。':phase===3&&index>=63?'考前减量，按时收工。':'按时段做题与订正，学习总量不超过 10 小时。')+' 今日 '+total+' h，政治 '+(pol.hours*60)+' 分钟。时段可整体平移，吃饭和休息另留。';
   result.push({date:date,index:index,week:Math.floor(index/7),phase:phase,tasks:items,hint:hint,buffer:isBuffer,hours:total});
@@ -269,17 +284,35 @@ function renderProgress(){
  renderCalendar();
 }
 function schedule(d){
- const entries=[];
- const clock=n=>String(Math.floor(n/60)).padStart(2,'0')+':'+String(n%60).padStart(2,'0');
- const slot=(start,minutes,label,detail)=>{entries.push({start,end:start+minutes,label,detail});return start+minutes;};
- const en=d.tasks.find(t=>t.subject==='英语二'), cs=d.tasks.find(t=>t.subject==='408'), pol=d.tasks.find(t=>t.subject==='政治');
- const fullEnglish=en.title.includes('整套');
- if(!fullEnglish)slot(460,30,'英语二 · 单词','复习旧词，回收阅读生词；新词最多 20—30 个。');
- let morning=510;
- d.tasks.filter(t=>['高数','线代','数学二'].includes(t.subject)).forEach(t=>{morning=slot(morning,t.hours*60,t.subject,t.title)+10;});
- const afternoon=slot(840,cs.hours*60,'408',cs.title);
- let evening=slot(Math.max(1110,afternoon+30),en.hours*60-(fullEnglish?0:30),'英语二',en.title);
- slot(evening+15,pol.hours*60,'政治',pol.title);
+ const entries=[],math=d.tasks.filter(t=>['高数','线代','数学二'].includes(t.subject));
+ const slot=(start,minutes,label,detail)=>{if(minutes>0)entries.push({start,end:start+minutes,label,detail});return start+minutes;};
+ const rest=(start,minutes,label)=>slot(start,minutes,label,'离开书桌，吃饭 / 活动；不计有效学习时间。');
+ const write=(t,start,minutes,offset=0)=>{
+  const full=/整卷|整套模拟|整套节奏/.test(t.title);
+  if(full&&offset===0&&minutes>=180){start=slot(start,180,t.title,'连续 180 分钟独立作答，按试卷题号完成；不查解析。记录不会与犹豫项。');minutes-=180;offset=180;}
+  if(!minutes)return start;
+  if(t.subject==='政治'){const intro=Math.min(20,Math.floor(minutes/2));start=slot(start,intro,t.title+' · 框架回忆','闭卷回忆昨天概念，再看今日专题提纲；标出易混条件。');return slot(start,minutes-intro,t.title+' · 选择与订正',t.quantity+'；题量以本时段能完成订正为准，背诵日改为闭卷列点。');}
+  if(t.subject==='英语二'&&!full){const vocab=Math.min(30,minutes),answer=Math.min(25,minutes-vocab);start=slot(start,vocab,'英语单词 · '+t.title,'旧词与昨天错词优先，遮住释义回忆；新词最多 20—30 个。');start=slot(start,answer,t.title+' · 独立作答','阅读先独立完成 5 题；专项日完成标题所列题型，不边做边看解析。');return slot(start,minutes-vocab-answer,t.title+' · 订正与专项',t.content+' 每题标定位句和错因，精拆 2 句，最后回忆今天生词。');}
+  const steps=t.subject==='英语二'?['单词：复习昨日错词与本篇生词，遮住释义回忆','独立作答：'+t.title+'；阅读先限时 25 分钟','订正与专项：逐题找原文依据，记录同义替换；'+t.content]:t.subject==='政治'?['闭卷回忆昨日概念，再学今日框架：'+t.title,'选择题与订正：'+t.quantity+'；每道错题解释错误选项']:['独立做题：'+t.title+'；'+t.quantity,'逐题订正：写出卡点、缺失条件和正确步骤；只回看相关知识','闭卷重做：选今日最重要的 1—2 道错题，重新写完整过程'];
+  const n=Math.min(steps.length,Math.max(1,Math.floor(minutes/25)));
+  let left=minutes;for(let k=0;k<n;k++){const m=k===n-1?left:Math.floor(minutes/n/5)*5;start=slot(start,m,t.subject+' · '+t.title,(offset?'接续上午：':'')+steps[offset?Math.min(k+1,steps.length-1):k]);left-=m;}return start;
+ };
+ let morning=480,available=230,overflow=[];
+ for(const t of math){let minutes=t.hours*60;const take=Math.min(minutes,available);
+  if(morning===600)morning=rest(morning,10,'上午休息');
+  if(morning<600&&morning+take>600&&!/整卷|模拟|整卷节奏/.test(t.title)){const first=600-morning;morning=write(t,morning,first);morning=rest(morning,10,'上午休息');morning=write(t,morning,take-first,first);}
+  else morning=write(t,morning,take);
+  available-=take;if(minutes>take)overflow.push({t,minutes:minutes-take});
+ }
+ if(morning<720)rest(morning,720-morning,'上午收工 / 休息');
+ rest(720,120,'午餐与午休');
+ const cs=d.tasks.find(t=>t.subject==='408'),en=d.tasks.find(t=>t.subject==='英语二'),pol=d.tasks.find(t=>t.subject==='政治');
+ const slack=480-(cs.hours+en.hours+pol.hours)*60-overflow.reduce((s,p)=>s+p.minutes,0);
+ const dinner=Math.min(45,slack-10),walk=Math.min(15,Math.max(0,slack-dinner-10));
+ let cursor=write(cs,840,cs.hours*60);cursor=rest(cursor,dinner,'晚餐');cursor=rest(cursor,walk,'散步与休息');
+ for(const part of overflow){cursor=write(part.t,cursor,part.minutes,230);}
+ cursor=write(en,cursor,en.hours*60);cursor=rest(cursor,10,'短休息');cursor=write(pol,cursor,pol.hours*60);
+ if(cursor<1320)rest(cursor,1320-cursor,'自由休息 / 提前收工');
  return entries;
 }
 function agendaMarkup(d){return schedule(d).map(s=>'<div class="time-slot"><time>'+String(Math.floor(s.start/60)).padStart(2,'0')+':'+String(s.start%60).padStart(2,'0')+'—'+String(Math.floor(s.end/60)).padStart(2,'0')+':'+String(s.end%60).padStart(2,'0')+'</time><div><strong>'+esc(s.label)+'</strong><p>'+esc(s.detail)+'</p></div></div>').join('');}
@@ -291,7 +324,7 @@ function renderSchedule(d){
  if(!agenda){agenda=document.createElement('div');agenda.id='dayAgenda';$('taskList').before(agenda);}
  agenda.innerHTML='<h4 class="agenda-title">'+short(d.date)+' · 今天几点学什么</h4><div class="time-agenda">'+agendaMarkup(d)+'</div><h4 class="agenda-title">具体任务与打卡</h4>';
  const box=document.querySelector('.aside-box');
- box.innerHTML='<h2>所选日 · '+d.hours+' 小时</h2><div class="alloc">'+d.tasks.map(t=>'<span>'+esc(t.subject)+'</span><span>'+t.hours+' h</span>').join('')+'</div><p>早晨背词，上午数学，下午 408，晚上英语与政治。午餐午休、晚餐与散步留在空白时段。</p><p>长时段普通训练可短休，休息不计学习时长；整卷模拟连续计时。补缺日不超过 10 小时。</p>';
+ box.innerHTML='<h2>所选日 · '+d.hours+' 小时</h2><div class="alloc">'+d.tasks.map(t=>'<span>'+esc(t.subject)+'</span><span>'+t.hours+' h</span>').join('')+'</div><p>08:00—12:00 数学，14:00 起安排 408、英语与政治，22:00 前收工。午餐午休、晚餐与散步留在空白时段。</p><p>长时段普通训练可短休，休息不计学习时长；整卷模拟连续计时。补缺日不超过 10 小时。</p>';
 }
 function render(){
  const d=plan[selected];selectedWeek=d.week;$('weekSelect').value=String(selectedWeek);$('prevWeek').disabled=selectedWeek===0;$('nextWeek').disabled=selectedWeek===9;

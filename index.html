@@ -322,7 +322,7 @@ function dailyBlocks(d){
  const afternoon=isExam(en)?en:cs,evening=isExam(en)?cs:en;
  const afternoonEnd=push(afternoon,840);
  const eveningEnd=push(evening,Math.max(1080,afternoonEnd+60));
- push(pol,eveningEnd+10);
+ push(pol,eveningEnd+Math.min(10,Math.max(0,1320-eveningEnd-Math.round(pol.hours*60))));
  return blocks;
 }
 function clock(n){return String(Math.floor(n/60)).padStart(2,'0')+':'+String(n%60).padStart(2,'0');}

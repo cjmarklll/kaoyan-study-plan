@@ -22,6 +22,11 @@ section.block{margin-top:40px}.section-title{display:flex;justify-content:space-
 @media(max-width:380px){.heading-line{align-items:start;flex-direction:column;gap:7px}.log-line{align-items:start;flex-direction:column}.workspace aside{grid-template-columns:1fr}.aside-box:last-child{grid-column:auto}nav{gap:12px}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important}}
 @media print{body{background:white;font-size:10px}.top,.workspace,.tools,.toast,#firstFortnight,#weekOverview,.storage-warning{display:none!important}main{padding:0;max-width:none}.intro{grid-template-columns:1fr auto;gap:20px;padding:0 0 15px}h1{font-size:25px}.countdown strong{font-size:35px}.lead,.baseline p,.notice{font-size:10px}.baseline{gap:12px}.phases{grid-template-columns:1fr 1fr}.phase{break-inside:avoid;padding:13px}.phase dl{font-size:10px}.methods{grid-template-columns:1fr 1fr 1fr}.method{break-inside:avoid;padding:12px}.method p{font-size:10px}section.block{margin-top:20px}#printPlan{display:block;break-before:page}table{min-width:0;font-size:9px}th,td{padding:6px}thead{display:table-header-group}tr{break-inside:avoid}a{color:inherit;text-decoration:none}.footer{font-size:9px}}
+/* 深蓝学习手账：橙色定位当前阶段，时间轴优先 */
+:root{--ink:#182d46;--bg:#f1f3f5;--blue:#b74718;--light:#fff0e5;--line:#d6dce2;--radius:10px}
+.top{border-bottom:4px solid #f18a4c}.intro{background:#182d46;color:#fff;padding:36px;border-radius:12px 12px 0 0;border:0}.intro .lead,.intro .edition,.intro .countdown p{color:#d8e1eb}.intro a{color:#ffb783}.intro h1{font-family:STKaiti,KaiTi,serif;font-size:clamp(34px,4vw,54px);letter-spacing:.02em}.countdown{border-color:#f18a4c}.baseline{background:#fff;padding:24px;border-radius:0 0 12px 12px}.notice{background:#e8edf3}.board-head{background:#182d46;color:#fff}.board-head .subtext{color:#d4deea}.day-tab{color:var(--ink)}.day-tab.active{background:#b74718}.phase{border-top-color:#ed884e}.phase-date{color:#a03c13}.task h4{font-size:17px}.task p{font-size:13px}.task textarea{background:#fff}.section-title h2{font-family:STKaiti,KaiTi,serif;font-size:28px}.phase-picker{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:25px 0}.phase-picker button{text-align:left;padding:16px;background:white;border-top:4px solid #acb9c7}.phase-picker button.active{border-color:#b74718;background:#fff0e5}.phase-picker strong,.phase-picker small{display:block}.phase-picker small{font-size:11px;color:var(--muted)}.time-agenda{margin:16px 0 25px;border:1px solid var(--line);border-radius:8px;overflow:hidden}.time-slot{display:grid;grid-template-columns:112px 1fr;gap:14px;padding:13px 15px;border-bottom:1px solid var(--line);background:#f7f9fb}.time-slot:last-child{border-bottom:0}.time-slot time{font-weight:700;color:#a03c13;font-size:13px}.time-slot strong{font-size:13px}.time-slot p{margin:3px 0 0;font-size:12px;color:var(--muted)}.agenda-title{font-size:16px;margin:18px 0 4px}.task-list{gap:16px}.hours-stack{display:none}
+@media(max-width:760px){.intro{padding:25px 20px}.baseline{padding:20px}.phase-picker{grid-template-columns:1fr 1fr}.phase-picker button{padding:11px}.time-slot{grid-template-columns:96px 1fr;gap:8px;padding:12px 10px}.time-slot time{font-size:12px}.task h4{font-size:15px}}
+@media print{.intro{background:white;color:#182d46}.phase-picker{display:none}.intro .lead,.intro .edition,.intro .countdown p{color:#182d46}}
 </style>
 </head>
 <body>
@@ -40,6 +45,7 @@ section.block{margin-top:40px}.section-title{display:flex;justify-content:space-
 </section>
 <div class="notice"><p><strong>新计划的取舍：</strong>10.12—10.25 补缺与恢复；10.26—11.15 真题一轮；11.16—12.06 错题重做与模拟；12.07—12.18 收口。每周保留补缺日，真题按质量推进。</p><p><strong>报名提醒：</strong>若尚未完成报名，正式报名为 10.15—10.24，每天 9:00—22:00。核对缴费、报考信息以及报考点的确认要求。<a href="https://www.moe.gov.cn/jyb_xwfb/gzdt_gzdt/s5987/202609/t20260924_1451846.html" target="_blank" rel="noopener noreferrer">查看官方安排</a></p></div>
 <div class="storage-warning" id="storageWarning" role="alert">当前浏览器无法持久保存。打卡仍可使用，关闭页面前请导出记录。</div>
+<div class="phase-picker" id="phasePicker" aria-label="选择复习阶段"></div>
 <div class="workspace" id="today">
   <section class="board" aria-label="每日学习打卡">
     <div class="board-head"><div class="heading-line"><h2>今天先完成这几件事</h2><span class="phase-badge" id="phaseBadge"></span></div><p class="subtext">题量包含订正时间，可按卡片里的起步量完成。状态：待开始 → 进行中 → 已完成 → 需补做。看课完成与独立做题分开记录。</p>
@@ -65,27 +71,18 @@ section.block{margin-top:40px}.section-title{display:flex;justify-content:space-
 
 <section class="block" id="roadmap"><div class="section-title"><h2>剩下 68 天，分四段走</h2><p>保留一轮真题的覆盖面，把第二轮集中在错题和不会的题型。每一阶段都安排英语、政治与补缺。</p></div>
 <div class="phases">
-  <article class="phase"><div class="phase-date">10.12—10.25 · 14 天</div><h3>补未学章节，恢复独立做题</h3><dl><dt>数学二</dt><dd>高数与线代同步；先补多元微分、二重积分、微分方程和线代后半，再回测极限、导数、一元积分。</dd><dt>408</dt><dd>数据结构 4 天、计组 5 天、OS 3 天，穿插已学计网的验收；每周一天混合测与补缺。</dd><dt>英语二</dt><dd>单词每天 30 min；普通日阅读 1 篇并订正；两周内尝试小作文、图表作文、翻译和新题型。</dd><dt>政治</dt><dd>马原、新思想、史纲、毛概、思法走一遍主框架；每天 15—20 道选择，逐项订正。</dd></dl><p class="checkpoint">验收：10.18、10.25 用没做过的基础题短测。独立完成不足一半时，减少难题，真题先按章节拆做，同时补基础。</p></article>
-  <article class="phase"><div class="phase-date">10.26—11.15 · 21 天</div><h3>真题一轮，做到能复盘</h3><dl><dt>数学二</dt><dd>目标 2016—2023 年 8 套。每周最多 3 套，整卷 3 h，次日复盘。基础不足时拆卷训练，记录未限时状态。</dd><dt>408</dt><dd>同样 8 套，与数学整卷日错开。订正到具体模型；算法题、PV 题、地址计算必须关答案重写。</dd><dt>英语二</dt><dd>继续真题阅读；每周小作文、图表作文各写 1 篇，翻译、新题型、完形轮换加入，不等到 12 月才开始。</dd><dt>政治</dt><dd>选择题按模块滚动做，整理错因与核心概念。限时 20—30 题，量以能够当天订正为准。</dd></dl><p class="checkpoint">验收：会做却丢分、看答案才会、知识缺口分开记。若复盘积压超过 2 套，暂停下一套，把本周第 3 套改成订正。</p></article>
+  <article class="phase"><div class="phase-date">10.12—10.25 · 14 天</div><h3>补未学章节，恢复独立做题</h3><dl><dt>数学二</dt><dd>高数与线代同步；先补多元微分、二重积分、微分方程和线代后半，再回测极限、导数、一元积分。</dd><dt>408</dt><dd>数据结构 4 天、计组 5 天、OS 3 天，穿插已学计网的验收；每周一天混合测与补缺。</dd><dt>英语二</dt><dd>单词每天 30 min；普通日阅读 1 篇并订正；两周内尝试小作文、图表作文、翻译和新题型。</dd><dt>政治</dt><dd>马原、新思想、史纲、毛概、思法走一遍主框架；每天 45 min：框架 20 min，选择 8—12 题并订正 25 min。</dd></dl><p class="checkpoint">验收：10.18、10.25 用没做过的基础题短测。独立完成不足一半时，减少难题，真题先按章节拆做，同时补基础。</p></article>
+  <article class="phase"><div class="phase-date">10.26—11.15 · 21 天</div><h3>真题一轮，做到能复盘</h3><dl><dt>数学二</dt><dd>目标 2016—2023 年 8 套。每周最多 3 套，整卷 3 h，次日复盘。基础不足时拆卷训练，记录未限时状态。</dd><dt>408</dt><dd>同样 8 套，与数学整卷日错开。订正到具体模型；算法题、PV 题、地址计算必须关答案重写。</dd><dt>英语二</dt><dd>继续真题阅读；每周小作文、图表作文各写 1 篇，翻译、新题型、完形轮换加入，不等到 12 月才开始。</dd><dt>政治</dt><dd>选择题按模块滚动做，整理错因与核心概念。每天 60 min：选择 15—20 题并订正，回忆易混概念。</dd></dl><p class="checkpoint">验收：会做却丢分、看答案才会、知识缺口分开记。若复盘积压超过 2 套，暂停下一套，把本周第 3 套改成订正。</p></article>
   <article class="phase"><div class="phase-date">11.16—12.06 · 21 天</div><h3>错题重做，近年卷模拟</h3><dl><dt>数学二</dt><dd>每周 1 套保留的 2024 / 2025 / 2026 年真题，按 3 h 模拟；其余时间二刷错题与典型大题。</dd><dt>408</dt><dd>每周 1 套近年真题模拟，安排在数学模拟次日。四科交叉重测，综合题练分点与过程书写。</dd><dt>英语二</dt><dd>每周 1 次整套 3 h；当天英语增加的 1 h 从数学与 408 各减 0.5 h。作文练到能独立限时完成。</dd><dt>政治</dt><dd>继续选择题、时政与框架回忆；每天加入 20—30 min 主观题分点表达，再逐步增加背诵。</dd></dl><p class="checkpoint">验收：模拟后次日必须复盘。看过的卷只作训练，不当作新卷预测成绩；新增模拟卷最多补 1—2 套，并以复盘完成为前提。</p></article>
-  <article class="phase"><div class="phase-date">12.07—12.18 · 12 天</div><h3>收回知识点，保持手感</h3><dl><dt>数学二</dt><dd>公式、典型入口、错题回测。12.07 预留最后一次整卷节奏练习，其后以短组题保持计算与书写。</dd><dt>408</dt><dd>12.08 预留最后一次整卷；随后回顾四科知识图、算法 / PV / Cache / 地址 / TCP 等模型。</dd><dt>英语二</dt><dd>单词每天保留；大小作文背自己的可用表达并默写。12.10 预留整套，随后短阅读和作文复写。</dd><dt>政治</dt><dd>普通日增加到 2 h：主观题背诵、材料对应、选择错题。背完要合上资料，列出作答要点。</dd></dl><p class="checkpoint">减量：12.14—12.17 约 7 h，12.18 约 3 h 轻复习。确认准考证、证件、路线和用品，保持睡眠。</p></article>
+  <article class="phase"><div class="phase-date">12.07—12.18 · 12 天</div><h3>收回知识点，保持手感</h3><dl><dt>数学二</dt><dd>公式、典型入口、错题回测。12.07 预留最后一次整卷节奏练习，其后以短组题保持计算与书写。</dd><dt>408</dt><dd>12.08 预留最后一次整卷；随后回顾四科知识图、算法 / PV / Cache / 地址 / TCP 等模型。</dd><dt>英语二</dt><dd>单词每天保留；大小作文背自己的可用表达并默写。12.10 预留整套，随后短阅读和作文复写。</dd><dt>政治</dt><dd>普通日 90 min：主观题背诵、材料对应、选择错题。背完要合上资料，列出作答要点。</dd></dl><p class="checkpoint">减量：12.14—12.17 约 7 h，12.18 约 3 h 轻复习。确认准考证、证件、路线和用品，保持睡眠。</p></article>
 </div></section>
 
-<section class="block" id="firstFortnight"><div class="section-title"><h2>前两周，具体到章节</h2><p>10.12 按 6 h 启动，补缺日按卡片时长。普通日建议：高数小题 4—6 + 大题 2—3；线代小题 3—5 + 大题 1—2；408 选择 15—20 + 综合 2。先独立做，再订正，题量服从时间。</p></div><div class="surface table-wrap"><table class="topic-table"><thead><tr><th>日期</th><th>高数 · 普通日 2.5 h</th><th>线代 · 普通日 1 h</th><th>408 · 普通日 3 h</th><th>英语二 / 政治</th></tr></thead><tbody id="fortnightRows"></tbody></table></div></section>
+<section class="block" id="firstFortnight"><div class="section-title"><h2>前两周，具体到章节</h2><p>10.12 按 6 h 启动，补缺日按卡片时长。普通日建议：高数小题 4—6 + 大题 2—3；线代小题 3—5 + 大题 1—2；408 选择 15—20 + 综合 2。先独立做，再订正，题量服从时间。</p></div><div class="surface table-wrap"><table class="topic-table"><thead><tr><th>日期</th><th>高数 · 普通日 3 h</th><th>线代 · 普通日 1 h</th><th>408 · 普通日 3 h</th><th>英语二 / 政治</th></tr></thead><tbody id="fortnightRows"></tbody></table></div></section>
 
-<section class="block" id="routine"><div class="section-title"><h2>每天的 10 小时怎么用</h2><p>下面是有效学习时间，休息、吃饭不计入。复盘包含在各科时段内；模拟日按每日卡片替换时段内容。</p></div><div class="surface table-wrap"><table><thead><tr><th>时间</th><th>任务</th><th>执行方式</th></tr></thead><tbody>
-<tr><td>07:40—08:10</td><td>英语单词 · 0.5 h</td><td>旧词优先，新词 20—30 个上限；重点回收真题生词。</td></tr>
-<tr><td>08:30—11:00</td><td>高数 · 2.5 h</td><td>先做题找卡点；补课通常控制在 30—45 min，再做典型题。</td></tr>
-<tr><td>11:10—12:10</td><td>线代 · 1 h</td><td>概念条件 + 计算 / 证明。10.26 后数学可合并为整卷 3 h + 初步检查 0.5 h。</td></tr>
-<tr><td>13:40—16:10</td><td>408 主训练 · 2.5 h</td><td>选择题暴露缺口，综合题写完整过程；整卷日连同晚间 0.5 h 合并为 3 h。</td></tr>
-<tr><td>16:30—17:30</td><td>英语阅读 · 1 h</td><td>约 25 min 独立做，35 min 定位订正；剩余精读放到晚间。</td></tr>
-<tr><td>19:10—20:40</td><td>政治 · 1.5 h</td><td>框架 45—60 min + 选择与订正 30—45 min；后期逐步加入主观题。</td></tr>
-<tr><td>20:50—21:20</td><td>408 回测 · 0.5 h</td><td>闭卷复现一道综合题或一个模型；与下午合计 3 h。</td></tr>
-<tr><td>21:30—22:00</td><td>英语专项 · 0.5 h</td><td>精读 / 翻译 / 新题型 / 作文轮换；英语全天合计 2 h。</td></tr>
-</tbody></table></div></section>
+<section class="block" id="routine"><div class="section-title"><h2>四个阶段，各有每天的节奏</h2><p>点击上方阶段按钮，查看代表日；选择具体日期时，上方时间轴自动使用当天预算。整卷训练保留连续三小时。</p></div><div class="surface table-wrap"><table><thead><tr><th>阶段</th><th>数学二</th><th>408</th><th>英语二</th><th>政治</th></tr></thead><tbody><tr><td>10.12—10.25</td><td>4 h：高数 3 + 线代 1</td><td>3 h</td><td>2.25 h</td><td>45 min</td></tr><tr><td>10.26—11.15</td><td>4 h：整卷 / 复盘</td><td>3 h</td><td>2 h</td><td>60 min</td></tr><tr><td>11.16—12.06</td><td>3.75 h</td><td>3 h</td><td>2 h</td><td>75 min</td></tr><tr><td>12.07—12.13</td><td>3.5 h</td><td>3 h</td><td>2 h</td><td>90 min</td></tr></tbody></table><p>以上为普通日，共 10 小时。启动日、补缺日、英语整套日和 12.14 后的减量日，以当天时间轴为准。模拟次日优先订正，做不完先减题量。</p></div></section>
 
 <section class="block" id="methods"><div class="section-title"><h2>让计划跟得上实际</h2><p>前 3 天先验证执行量。若每天 10 小时难以保持，减少当天题量，并记录真实时长。</p></div><div class="methods">
-<article class="method"><h3>没状态时，执行 6 小时保底</h3><p>数学 2 h、408 1.5 h、英语 1.5 h、政治 1 h。每科至少完成一组独立题或一次闭卷回忆。</p><p>未完成项标“需补做”，不把整天的任务翻倍塞进明天；补缺日挑最多 3 个重点。</p></article>
+<article class="method"><h3>没状态时，执行 6 小时保底</h3><p>数学 2.5 h、408 1.5 h、英语 1.5 h、政治 0.5 h。每科至少完成一组独立题或一次闭卷回忆。</p><p>未完成项标“需补做”，不把整天的任务翻倍塞进明天；补缺日挑最多 3 个重点。</p></article>
 <article class="method"><h3>每周测试决定补什么</h3><p>基础题独立完成 ≥70%：继续当前节奏；50%—70%：推进并每天补一个模型；不足 50%：减少难题，用前 2 h 补基础。</p><p>这是调整任务量的工作阈值，不是录取或分数预测。没有做测试时不推测掌握率。</p></article>
 <article class="method"><h3>每道错题留一个下一步</h3><p>记下：卡点、关键条件、重做日期。第二天和一周后各抽一道重做；算法、PV、证明题要脱离答案复现。</p><p>每天看课总量尽量控制在 2 h 内（前期政治框架除外），把更多时间留给独立做题与订正。</p></article>
 </div>
@@ -164,7 +161,7 @@ function makePlan(){
     items[4].quantity='框架 30 min + 基础选择 10—15 题与订正 30 min';
     items[4].content='今天先认识马原的主框架与唯物论，用一小组选择题检查理解；从明天起政治恢复为 1.5 h。';
    }
-   hint=buffer?'基本任务 7 h + 最多 3 h 补缺；先处理本周最重要的 3 个点。':index===0?'今天先按 6 h 启动：数学 2 h、408 1.5 h、英语 1.5 h、政治 1 h。已经很晚就四科各做一个小任务，明天接回普通日节奏，不熬夜补时长。':'建议 10 h 上限。高数与线代同步，四科每天都有输出。';
+   hint=buffer?'基本任务 7 h + 最多 3 h 补缺；先处理本周最重要的 3 个点。':index===0?'今天先按 6 h 启动：数学 2.5 h、408 1.5 h、英语 1.5 h、政治 0.5 h。已经很晚就四科各做一个小任务，明天接回普通日节奏，不熬夜补时长。':'建议 10 h 上限。高数与线代同步，四科每天都有输出。';
   }else if(phase===1){
    const j=index-14,w=Math.floor(j/7),d=j%7,mNo=w*3+d/2,sNo=w*3+(d-1)/2;
    const mathPaper=[0,2,4].includes(d)&&mNo<8;
@@ -199,7 +196,19 @@ function makePlan(){
    ];
    hint=last?'今天约 3 h 轻复习。完成证件、路线、用品检查，按正常时间睡觉。':light?'约 7 h，减量保持手感；不再开新整卷。':j===3?'英语整套日：数学 2.5 h、408 2.5 h、英语 3 h、政治 2 h，共 10 h。':'约 10 h；政治增加到 2 h，数学与 408 用典型题保持准确。';
   }
-  result.push({date:date,index:index,week:Math.floor(index/7),phase:phase,tasks:items,hint:hint,buffer:isBuffer,hours:Math.round(items.reduce(function(s,t){return s+t.hours;},0)*100)/100});
+  // Keep task IDs and saved records; change the time budget only.
+  const pol=items.find(t=>t.subject==='政治'), en=items.find(t=>t.subject==='英语二');
+  const oldPol=pol.hours;
+  pol.hours=index===0?0.5:phase===0?0.75:phase===1?1:phase===2?1.25:Math.min(pol.hours,1.5);
+  const freed=oldPol-pol.hours;
+  if(phase===0){items[0].hours+=Math.min(freed,0.5);en.hours+=Math.max(0,freed-0.5);}
+  else{items[0].hours+=freed;}
+  if(phase===0){pol.content='先用 20 分钟学习当天框架，再用剩余时间做选择并订正；未完成的框架进入本周补缺。';pol.quantity=index===0?'框架 15 min + 选择 5 题与订正 15 min':'框架 20 min + 选择 8—12 题与订正 25 min';}
+  if(phase===1){pol.quantity='选择 15—20 题与订正 + 易混概念回忆，共 60 min';}
+  if(phase===2){pol.quantity='选择与订正 45 min + 主观题列点 30 min';}
+  const total=Math.round(items.reduce((s,t)=>s+t.hours,0)*100)/100;
+  hint=(index===0?'今天用 6 小时恢复节奏。':isBuffer?'补缺日：先完成基本任务，余下时间最多补 3 个重点。':phase===3&&index>=63?'考前减量，按时收工。':'按时段做题与订正，学习总量不超过 10 小时。')+' 今日 '+total+' h，政治 '+(pol.hours*60)+' 分钟。时段可整体平移，吃饭和休息另留。';
+  result.push({date:date,index:index,week:Math.floor(index/7),phase:phase,tasks:items,hint:hint,buffer:isBuffer,hours:total});
  }
  return result;
 }
@@ -259,9 +268,35 @@ function renderProgress(){
  $('dayStrip').innerHTML=ds.map(function(day){const classes=['day-tab'];if(day.index===selected)classes.push('active');if(day.date===today)classes.push('today');if(done(day)===day.tasks.length)classes.push('completed');return '<button class="'+classes.join(' ')+'" data-date="'+day.date+'" aria-label="'+esc(short(day.date)+' '+weekday(day.date))+'" aria-pressed="'+String(day.index===selected)+'"><span>'+weekday(day.date)+'</span><strong>'+short(day.date)+'</strong><em>'+(day.date===today?'今天':day.buffer?'补缺日':done(day)+'/'+day.tasks.length)+'</em></button>';}).join('');
  renderCalendar();
 }
+function schedule(d){
+ const entries=[];
+ const clock=n=>String(Math.floor(n/60)).padStart(2,'0')+':'+String(n%60).padStart(2,'0');
+ const slot=(start,minutes,label,detail)=>{entries.push({start,end:start+minutes,label,detail});return start+minutes;};
+ const en=d.tasks.find(t=>t.subject==='英语二'), cs=d.tasks.find(t=>t.subject==='408'), pol=d.tasks.find(t=>t.subject==='政治');
+ const fullEnglish=en.title.includes('整套');
+ if(!fullEnglish)slot(460,30,'英语二 · 单词','复习旧词，回收阅读生词；新词最多 20—30 个。');
+ let morning=510;
+ d.tasks.filter(t=>['高数','线代','数学二'].includes(t.subject)).forEach(t=>{morning=slot(morning,t.hours*60,t.subject,t.title)+10;});
+ const afternoon=slot(840,cs.hours*60,'408',cs.title);
+ let evening=slot(Math.max(1110,afternoon+30),en.hours*60-(fullEnglish?0:30),'英语二',en.title);
+ slot(evening+15,pol.hours*60,'政治',pol.title);
+ return entries;
+}
+function agendaMarkup(d){return schedule(d).map(s=>'<div class="time-slot"><time>'+String(Math.floor(s.start/60)).padStart(2,'0')+':'+String(s.start%60).padStart(2,'0')+'—'+String(Math.floor(s.end/60)).padStart(2,'0')+':'+String(s.end%60).padStart(2,'0')+'</time><div><strong>'+esc(s.label)+'</strong><p>'+esc(s.detail)+'</p></div></div>').join('');}
+function renderSchedule(d){
+ const dates=['2026-10-13','2026-10-26','2026-11-16','2026-12-07'];
+ const ranges=['10.12—10.25','10.26—11.15','11.16—12.06','12.07—12.18'];
+ $('phasePicker').innerHTML=PHASES.map((p,i)=>'<button data-date="'+dates[i]+'" class="'+(d.phase===i?'active':'')+'"><small>阶段 '+(i+1)+' / '+ranges[i]+'</small><strong>'+esc(p)+'</strong><small>政治 '+[45,60,75,90][i]+' 分钟 / 普通日</small></button>').join('');
+ let agenda=$('dayAgenda');
+ if(!agenda){agenda=document.createElement('div');agenda.id='dayAgenda';$('taskList').before(agenda);}
+ agenda.innerHTML='<h4 class="agenda-title">'+short(d.date)+' · 今天几点学什么</h4><div class="time-agenda">'+agendaMarkup(d)+'</div><h4 class="agenda-title">具体任务与打卡</h4>';
+ const box=document.querySelector('.aside-box');
+ box.innerHTML='<h2>所选日 · '+d.hours+' 小时</h2><div class="alloc">'+d.tasks.map(t=>'<span>'+esc(t.subject)+'</span><span>'+t.hours+' h</span>').join('')+'</div><p>早晨背词，上午数学，下午 408，晚上英语与政治。午餐午休、晚餐与散步留在空白时段。</p><p>长时段普通训练可短休，休息不计学习时长；整卷模拟连续计时。补缺日不超过 10 小时。</p>';
+}
 function render(){
  const d=plan[selected];selectedWeek=d.week;$('weekSelect').value=String(selectedWeek);$('prevWeek').disabled=selectedWeek===0;$('nextWeek').disabled=selectedWeek===9;
  $('phaseBadge').textContent=PHASES[d.phase];$('dayHeading').textContent=short(d.date)+' '+weekday(d.date)+(d.buffer?' · 补缺与验收':'');$('dayHint').textContent=d.hint;
+ renderSchedule(d);
  $('taskList').innerHTML=d.tasks.map(function(t){
   const entry=data.tasks[t.id]||{},s=status(t);
   return '<article class="task" data-id="'+t.id+'" data-status="'+s+'" style="--subject:'+COLORS[t.subject]+'"><div class="task-top"><span class="subject">'+esc(t.subject)+'<small>'+t.hours+' h</small></span><button class="status" data-action="status" aria-label="'+esc(t.subject+'：'+LABELS[s]+'，点击切换')+'">'+LABELS[s]+'</button></div><h4>'+esc(t.title)+'</h4><p>'+esc(t.content)+'</p><span class="quantity">'+esc(t.quantity)+'</span><label class="sr-only" for="note-'+t.id+'">'+esc(t.subject)+'完成记录</label><textarea id="note-'+t.id+'" data-action="note" maxlength="4000" placeholder="实际做了什么 / 错因 / 下次补哪题">'+esc(entry.note||'')+'</textarea></article>';

@@ -323,22 +323,29 @@ function dailyBlocks(d){
  const afternoonEnd=push(afternoon,840);
  const eveningEnd=push(evening,Math.max(1080,afternoonEnd+60));
  push(pol,eveningEnd+Math.min(10,Math.max(0,1320-eveningEnd-Math.round(pol.hours*60))));
+ if(!d.buffer&&d.index<63){
+  const last=blocks[blocks.length-1].end;
+  const minutes=Math.min(1320-last-10,Math.max(0,Math.round((10-d.hours)*60)));
+  if(minutes>=15)blocks.push({id:d.date+'-consolidation',subject:'综合巩固与收尾',title:'只消化旧内容，不另开新卷',start:1320-minutes,end:1320,exam:false,extra:true});
+  else if(last<1320){const shift=1320-last;const pb=blocks[blocks.length-1];pb.start+=shift;pb.end+=shift;}
+ }
  return blocks;
 }
 function clock(n){return String(Math.floor(n/60)).padStart(2,'0')+':'+String(n%60).padStart(2,'0');}
 function placement(t,d){const block=dailyBlocks(d).find(b=>b.id===t.id);return clock(block.start)+'–'+clock(block.end)+(block.exam?' · 整卷模拟':' · 建议时段');}
+function plannedHours(d){return Math.round(dailyBlocks(d).reduce((n,b)=>n+b.end-b.start,0)/60*100)/100;}
 function duration(t){return t.hours<1?Math.round(t.hours*60)+' 分钟':t.hours+' 小时';}
 function renderSchedule(d){
  const dates=['2026-10-13','2026-10-26','2026-11-16','2026-12-07'];
  const ranges=['10.12—10.25','10.26—11.15','11.16—12.06','12.07—12.18'];
  $('phasePicker').innerHTML=PHASES.map((p,i)=>'<button data-date="'+dates[i]+'" aria-pressed="'+(d.phase===i)+'" class="'+(d.phase===i?'active':'')+'"><small>'+ranges[i]+'</small><strong>'+esc(p)+'</strong></button>').join('');
  let agenda=$('dayAgenda');if(!agenda){agenda=document.createElement('div');agenda.id='dayAgenda';$('taskList').before(agenda);}
- agenda.innerHTML='<div class="focus-note"><strong>今日节奏</strong><div class="block-overview">'+dailyBlocks(d).map(b=>'<span><time>'+clock(b.start)+'–'+clock(b.end)+'</time> '+esc(b.subject)+'</span>').join('')+'</div><p>每科一个完整时段，内部完成做题、订正和回测。普通日可适度平移；整卷模拟固定考试时间。12:00–14:00 午休，下午任务结束后至少留 1 小时吃饭休息；22:00 前收工。</p></div>';
- document.querySelector('.aside-box').innerHTML='<h2>今日参考量 · '+d.hours+' 小时</h2><div class="alloc">'+d.tasks.map(t=>'<span>'+esc(t.subject)+'</span><span>'+duration(t)+'</span>').join('')+'</div><p>这是含订正的预算，不是必须填满的工时。学习窗口仍为 08:00–12:00、14:00–22:00，午休、晚饭和短休息单独留出。</p><p>普通日约 8–9 小时；最多 10 小时。完成核心题并订正就可以收工，不用凑题量。</p><p>连续两天做不完：次日新题减约三分之一。模拟未复盘完：替换下一套，不把积压叠到晚上。</p>';
+ agenda.innerHTML='<div class="focus-note"><strong>今日节奏</strong><div class="block-overview">'+dailyBlocks(d).map(b=>'<span><time>'+clock(b.start)+'–'+clock(b.end)+'</time> '+esc(b.subject)+'</span>').join('')+'</div><p>每科一个完整时段，内部完成做题、订正和回测。普通日可适度平移；整卷模拟固定考试时间。12:00–14:00 午休，下午任务结束后至少留 1 小时吃饭休息；普通日学到 22:00；补缺日与考前减量日按较轻任务执行。</p>'+dailyBlocks(d).filter(b=>b.extra).map(b=>'<p><strong>'+clock(b.start)+'–22:00 综合巩固与收尾：</strong>从今天数学或 408 的错题中选 1–2 道独立重做，再闭卷回忆英语错词和政治易混概念，最后在当天复盘框写下明天优先补的 1 个点。已完成的内容不重复抄写，不另开新卷。</p>').join('')+'</div>';
+ document.querySelector('.aside-box').innerHTML='<h2>今日参考量 · '+plannedHours(d)+' 小时</h2><div class="alloc">'+d.tasks.map(t=>'<span>'+esc(t.subject)+'</span><span>'+duration(t)+'</span>').join('')+dailyBlocks(d).filter(b=>b.extra).map(b=>'<span>综合巩固与收尾</span><span>'+(b.end-b.start)+' 分钟</span>').join('')+'</div><p>这是含订正的预算，不是必须填满的工时。学习窗口仍为 08:00–12:00、14:00–22:00，午休、晚饭和短休息单独留出。</p><p>普通日延续到 22:00，总有效学习不超过 10 小时。最后一块消化错题和当天知识，不追加新卷。</p><p>连续两天做不完：次日新题减约三分之一。模拟未复盘完：替换下一套，不把积压叠到晚上。</p>';
 }
 function render(){
  const d=plan[selected];selectedWeek=d.week;$('weekSelect').value=String(selectedWeek);$('prevWeek').disabled=selectedWeek===0;$('nextWeek').disabled=selectedWeek===9;
- $('phaseBadge').textContent=PHASES[d.phase];$('dayHeading').textContent=short(d.date)+' '+weekday(d.date)+(d.buffer?' · 补缺与验收':'');$('dayHint').textContent=d.hint;
+ $('phaseBadge').textContent=PHASES[d.phase];$('dayHeading').textContent=short(d.date)+' '+weekday(d.date)+(d.buffer?' · 补缺与验收':'');$('dayHint').textContent=d.hint+(d.buffer||d.index>=63?'':' 今日含巩固约 '+plannedHours(d)+' h，22:00 收工。');
  renderSchedule(d);
  $('taskList').innerHTML=d.tasks.map(function(t){
   const entry=data.tasks[t.id]||{},s=status(t);

@@ -27,6 +27,8 @@ section.block{margin-top:40px}.section-title{display:flex;justify-content:space-
 body{font-size:15px}.top{background:var(--bg);color:var(--ink);border-bottom:1px solid var(--line)}.top-inner{max-width:1160px}.brand small,nav a{color:var(--muted)}main{max-width:1160px;padding-top:28px}.intro{grid-template-columns:1fr auto;gap:25px;padding:14px 0 24px}.intro h1{font-family:Georgia,STSong,SimSun,serif;font-size:36px;letter-spacing:0;font-weight:500}.countdown strong{font-size:36px}.countdown{border-left:1px solid var(--line)}.baseline{gap:20px;padding:18px 0}.baseline p{font-size:12px}.notice{background:#eeece5;border-left:2px solid #b4aa98;margin:12px 0 20px}.notice p+p{display:none}.workspace{grid-template-columns:minmax(0,1fr) 250px;gap:22px}.board,.aside-box,.surface,.phase,.method{background:var(--paper);box-shadow:none}.board-head{background:#efede6;color:var(--ink);padding:23px}.board-head .subtext{color:var(--muted)}button,input,textarea,select{color:var(--ink);color-scheme:light}button{background:var(--paper)}button:hover{border-color:#ac9784}.week-nav button,.week-nav select,.week-nav option{background:var(--paper);color:var(--ink)}button:disabled{color:#918c82;background:#eeeae3;cursor:default}.day-tab{background:transparent;border-color:transparent;color:var(--ink);padding:9px 2px}.day-tab.active{background:var(--light);border-color:#c49a84;color:#733c2b}.day-tab.active em{color:#733c2b}.day-tab strong{font-size:18px}.day-body{padding:24px}.day-hint{font-size:13px}.phase-picker{display:flex;gap:0;border-bottom:1px solid var(--line);margin:25px 0 22px}.phase-picker button{flex:1;text-align:left;border:0;border-bottom:2px solid transparent;border-radius:0;background:transparent;padding:12px 16px}.phase-picker button.active{border-color:var(--blue);background:#eee9df}.phase-picker small,.phase-picker strong{display:block}.phase-picker small{font-size:11px;color:var(--muted)}.phase-picker strong{font-size:14px;font-weight:600}.task-list{gap:0}.task{border:0;border-top:1px solid var(--line);border-radius:0;padding:24px 0}.task:first-child{border-top:0;padding-top:8px}.task h4{font-size:18px;font-weight:600;margin:10px 0;line-height:1.65}.task p{font-size:14px;line-height:1.9;max-width:66ch}.subject{font-size:13px}.subject small{font-size:12px}.quantity{font-size:13px;font-weight:500;margin:10px 0}.task textarea{border:1px solid var(--line);background:transparent;min-height:40px;margin-top:10px}.task[data-status="doing"]{background:#f3eee4}.task[data-status="defer"]{background:#f8f1e4}.task[data-status="done"]{background:var(--green-light)}.task[data-status]:not([data-status="todo"]){padding-left:12px;padding-right:12px}.task details{font-size:12px;color:var(--muted);margin-top:10px}.task summary{cursor:pointer}.task details p{font-size:12px;margin:8px 0}.section-title h2{font-size:23px;font-weight:600}.section-title p{font-size:13px}.phase{border-top:1px solid var(--line);padding:23px}.phase h3{font-size:18px}.phase dd,.method p,.aside-box p{font-size:13px}.phase-date{color:var(--blue)}th{background:#eeece5}.row-selected{background:#f4e8df}.primary{background:var(--blue);color:white}.focus-note{font-size:13px;background:#f0ede5;border-radius:6px;padding:12px 15px;margin:0 0 18px}.focus-note strong{font-weight:600}.task-budget{white-space:normal}.section-title{align-items:start}.status{min-height:34px}:focus-visible{outline:2px solid #a54e35;outline-offset:3px}
 @media(max-width:760px){main{padding:20px 14px}.intro{grid-template-columns:1fr}.intro h1{font-size:30px}.countdown{display:none}.baseline{grid-template-columns:1fr 1fr}.workspace{grid-template-columns:1fr}.board-head,.day-body{padding:18px 15px}.phase-picker{display:grid;grid-template-columns:1fr 1fr}.phase-picker button{padding:10px}.task h4{font-size:16px}.task p{font-size:13px}.task-top{align-items:start}.subject small{display:block;margin:3px 0 0}.week-nav{grid-template-columns:32px minmax(0,1fr) 32px auto}.heading-line{flex-wrap:wrap}.workspace aside{grid-template-columns:1fr}.baseline p{font-size:12px}}
 @media print{.top,.phase-picker{display:none}.intro{color:var(--ink);background:white}}
+.block-overview{display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:8px}.block-overview span{font-size:12px}.block-overview time{font-variant-numeric:tabular-nums;color:var(--blue);font-weight:600}.focus-note p{font-size:12px;color:var(--muted);margin:10px 0 0}.task-budget{font-variant-numeric:tabular-nums}
+@media(max-width:760px){.day-strip{display:flex;overflow-x:auto;gap:6px;padding-bottom:7px;scroll-snap-type:x proximity}.day-tab{flex:0 0 58px;scroll-snap-align:nearest}.day-tab strong{font-size:16px}.block-overview{display:grid;grid-template-columns:1fr;gap:5px}}
 </style>
 </head>
 <body>
@@ -311,19 +313,27 @@ function renderProgress(){
  renderCalendar();
 }
 function isExam(t){return /整卷|真题模拟|整套模拟|整套节奏/.test(t.title);}
-function placement(t,d){
- if(isExam(t))return t.subject==='数学二'?'08:30–11:30 · 整卷模拟':'14:00–17:00 · 整卷模拟';
- if(['高数','线代','数学二'].includes(t.subject))return '上午 · 可弹性调整';
- if(t.subject==='408')return d.tasks.some(x=>x.subject==='英语二'&&isExam(x))?'晚间 · 英语模拟日换位':'下午 · 主攻时段';
- return '晚间 · 顺序可互换';
+function dailyBlocks(d){
+ const blocks=[];
+ const push=(t,start)=>{const end=start+Math.round(t.hours*60);blocks.push({id:t.id,subject:t.subject,title:t.title,start,end,exam:isExam(t)});return end;};
+ let morning=480;
+ d.tasks.filter(t=>['高数','线代','数学二'].includes(t.subject)).forEach(t=>{morning=push(t,isExam(t)?510:morning)+10;});
+ const cs=d.tasks.find(t=>t.subject==='408'),en=d.tasks.find(t=>t.subject==='英语二'),pol=d.tasks.find(t=>t.subject==='政治');
+ const afternoon=isExam(en)?en:cs,evening=isExam(en)?cs:en;
+ const afternoonEnd=push(afternoon,840);
+ const eveningEnd=push(evening,Math.max(1080,afternoonEnd+60));
+ push(pol,eveningEnd+10);
+ return blocks;
 }
+function clock(n){return String(Math.floor(n/60)).padStart(2,'0')+':'+String(n%60).padStart(2,'0');}
+function placement(t,d){const block=dailyBlocks(d).find(b=>b.id===t.id);return clock(block.start)+'–'+clock(block.end)+(block.exam?' · 整卷模拟':' · 建议时段');}
 function duration(t){return t.hours<1?Math.round(t.hours*60)+' 分钟':t.hours+' 小时';}
 function renderSchedule(d){
  const dates=['2026-10-13','2026-10-26','2026-11-16','2026-12-07'];
  const ranges=['10.12—10.25','10.26—11.15','11.16—12.06','12.07—12.18'];
  $('phasePicker').innerHTML=PHASES.map((p,i)=>'<button data-date="'+dates[i]+'" aria-pressed="'+(d.phase===i)+'" class="'+(d.phase===i?'active':'')+'"><small>'+ranges[i]+'</small><strong>'+esc(p)+'</strong></button>').join('');
  let agenda=$('dayAgenda');if(!agenda){agenda=document.createElement('div');agenda.id='dayAgenda';$('taskList').before(agenda);}
- agenda.innerHTML='<div class="focus-note"><strong>今天按学习块推进。</strong> 普通任务不锁定分钟；做题、订正、回测在同一块内完成。只把整卷模拟固定到考试时段。</div>';
+ agenda.innerHTML='<div class="focus-note"><strong>今日节奏</strong><div class="block-overview">'+dailyBlocks(d).map(b=>'<span><time>'+clock(b.start)+'–'+clock(b.end)+'</time> '+esc(b.subject)+'</span>').join('')+'</div><p>每科一个完整时段，内部完成做题、订正和回测。普通日可适度平移；整卷模拟固定考试时间。12:00–14:00 午休，下午任务结束后至少留 1 小时吃饭休息；22:00 前收工。</p></div>';
  document.querySelector('.aside-box').innerHTML='<h2>今日参考量 · '+d.hours+' 小时</h2><div class="alloc">'+d.tasks.map(t=>'<span>'+esc(t.subject)+'</span><span>'+duration(t)+'</span>').join('')+'</div><p>这是含订正的预算，不是必须填满的工时。学习窗口仍为 08:00–12:00、14:00–22:00，午休、晚饭和短休息单独留出。</p><p>普通日约 8–9 小时；最多 10 小时。完成核心题并订正就可以收工，不用凑题量。</p><p>连续两天做不完：次日新题减约三分之一。模拟未复盘完：替换下一套，不把积压叠到晚上。</p>';
 }
 function render(){
